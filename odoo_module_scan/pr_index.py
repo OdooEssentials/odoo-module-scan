@@ -39,9 +39,7 @@ def select_prs_to_scan(
         # A record with no stored SHA compares unequal, so records written
         # before head SHA tracking are rebuilt rather than trusted.
         pr["head_sha_changed"] = (
-            force
-            or not records
-            or any(r.get("pr_head_sha") != pr["head_sha"] for r in records)
+            force or not records or any(r.get("pr_head_sha") != pr["head_sha"] for r in records)
         )
         if pr["head_sha_changed"] and pr["pr_state"] != "merged":
             to_scan.append(pr)
@@ -72,9 +70,7 @@ def build_pr_index_for_repo_branch(
     handled: set[int] = set()
 
     for pr in repo_prs:
-        records, was_handled = _records_for_current_run(
-            repo_path, repo_name, previous, pr, verbose
-        )
+        records, was_handled = _records_for_current_run(repo_path, repo_name, previous, pr, verbose)
         new_modules.update(records)
         if was_handled:
             handled.add(pr["number"])
@@ -142,15 +138,9 @@ def _carry_forward(
     """Reuse a PR's previous records, refreshed with current PR metadata."""
     records = _records_for_pr(previous, pr["number"])
     if verbose:
-        detail = (
-            f"carrying forward {len(records)} records"
-            if records
-            else "no previous record"
-        )
+        detail = f"carrying forward {len(records)} records" if records else "no previous record"
         print(f"    → PR #{pr['number']}: {reason}, {detail}")
-    return {
-        doc_id: _copy_with_pr_state(record, pr) for doc_id, record in records.items()
-    }
+    return {doc_id: _copy_with_pr_state(record, pr) for doc_id, record in records.items()}
 
 
 def _classify_records(
@@ -167,9 +157,7 @@ def _classify_records(
         old_mod = previous.get(doc_id)
         if old_mod is None:
             created.append(doc_id)
-        elif any(
-            new_mod.get(k) != old_mod.get(k) for k in new_mod if k != "updated_at"
-        ):
+        elif any(new_mod.get(k) != old_mod.get(k) for k in new_mod if k != "updated_at"):
             updated.append(doc_id)
         else:
             unchanged.append(doc_id)
@@ -195,15 +183,9 @@ def _pr_ref(pr: JsonDict) -> str:
     return f"origin/pr/{pr['number']}"
 
 
-def _records_for_pr(
-    modules: dict[str, JsonDict], pr_number: int
-) -> dict[str, JsonDict]:
+def _records_for_pr(modules: dict[str, JsonDict], pr_number: int) -> dict[str, JsonDict]:
     """Return the module records belonging to a specific PR."""
-    return {
-        doc_id: mod
-        for doc_id, mod in modules.items()
-        if mod.get("pr_number") == pr_number
-    }
+    return {doc_id: mod for doc_id, mod in modules.items() if mod.get("pr_number") == pr_number}
 
 
 def _copy_with_pr_state(record: JsonDict, pr: JsonDict) -> JsonDict:
@@ -401,12 +383,9 @@ def _classify_change_kind(
     # (``name/`` at repo root, ``addons/name/`` or ``odoo/addons/name/``
     # under nested roots) — matching only the first path component
     # misses nested addons and mislabels code changes as docs.
-    module_files = [
-        p for p in changed_files if p == module_path or p.startswith(module_path + "/")
-    ]
+    module_files = [p for p in changed_files if p == module_path or p.startswith(module_path + "/")]
     docs_only = all(
-        p.endswith((".md", ".rst")) or "/doc" in p or "/readme" in p
-        for p in module_files
+        p.endswith((".md", ".rst")) or "/doc" in p or "/readme" in p for p in module_files
     )
     if docs_only:
         return "docs"

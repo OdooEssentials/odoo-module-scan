@@ -26,9 +26,7 @@ def parse_repo_list(text: str) -> list[tuple[str, str, str]]:
         parsed = _parse_repo_url(line)
         if parsed:
             owner, repo = parsed
-            spec = (
-                line if "://" in line or line.startswith("git@") else f"{owner}/{repo}"
-            )
+            spec = line if "://" in line or line.startswith("git@") else f"{owner}/{repo}"
             repos.append((owner, repo, spec))
     return repos
 
@@ -59,9 +57,7 @@ def load_repo_list(
             specs.append((owner, repo, spec))
 
     if extra_file and extra_file.is_file():
-        for owner, repo, spec in parse_repo_list(
-            extra_file.read_text(encoding="utf-8")
-        ):
+        for owner, repo, spec in parse_repo_list(extra_file.read_text(encoding="utf-8")):
             key = f"{owner}/{repo}"
             if key not in seen:
                 seen.add(key)

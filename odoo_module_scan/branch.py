@@ -8,9 +8,7 @@ from .constants import SKIP_DIRS
 from .git import _git_auth_env, git_output, git_url, run_git
 
 
-def get_remote_branch_heads(
-    repo_spec: str, branches: list[str]
-) -> dict[str, str] | None:
+def get_remote_branch_heads(repo_spec: str, branches: list[str]) -> dict[str, str] | None:
     """Return {branch: head_sha} for a remote repo without cloning.
 
     Uses ``git ls-remote`` against the GitHub HTTPS URL; works for public
@@ -68,12 +66,7 @@ def checkout_branch(repo_path: Path, branch: str, verbose: bool = False) -> bool
     exist in this repo — that is a normal condition when not all repos carry
     every OCA version.  Only prints a warning for unexpected git failures.
     """
-    if (
-        run_git(
-            "show-ref", "--verify", "--quiet", f"refs/heads/{branch}", cwd=repo_path
-        )
-        != 0
-    ):
+    if run_git("show-ref", "--verify", "--quiet", f"refs/heads/{branch}", cwd=repo_path) != 0:
         if verbose:
             print(f"  ○ {repo_path.name}: no {branch} branch, skipping")
         return False
@@ -110,9 +103,7 @@ def checkout_ref(repo_path: Path, ref: str, verbose: bool = False) -> bool:
         return False
 
 
-def iter_repos(
-    repos_dir: Path, specific_repos: list[str] | None = None
-) -> Iterator[Path]:
+def iter_repos(repos_dir: Path, specific_repos: list[str] | None = None) -> Iterator[Path]:
     """Yield valid repository directories from repos_dir.
 
     Args:
@@ -127,11 +118,7 @@ def iter_repos(
     if specific_repos:
         for name in specific_repos:
             repo_path = repos_dir / name
-            if (
-                repo_path.is_dir()
-                and name not in SKIP_DIRS
-                and not name.startswith(".")
-            ):
+            if repo_path.is_dir() and name not in SKIP_DIRS and not name.startswith("."):
                 yield repo_path
     else:
         for d in sorted(repos_dir.iterdir()):
