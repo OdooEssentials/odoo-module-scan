@@ -51,9 +51,9 @@ odoo-module-scan sync --branch 18.0 \
 # 2. scan them - checkouts and artifacts land under the cache dir
 odoo-module-scan scan --branch 18.0
 
-# 3. look at what you got (defaults: ~/.cache/odoo-module-scan/output)
-jq '.metadata' ~/.cache/odoo-module-scan/output/changes-18.0.json
-jq -r '.modules | keys[]' ~/.cache/odoo-module-scan/output/index-18.0.json | head
+# 3. look at what you got (default output: ~/.cache/odoo-module-scan/output)
+jq '.metadata' ~/.cache/odoo-module-scan/output/changes-18.0.json   # diff counts: {"new_count": 3, ...}
+jq -r '.modules | keys[]' ~/.cache/odoo-module-scan/output/index-18.0.json | head   # module names found
 ```
 
 Where things land:
@@ -295,7 +295,7 @@ state_file = Path("/var/lib/module-index/index-18.0.json")
 prev = load_json(state_file) if state_file.is_file() else None
 
 full_index, changes = build_index(
-    Path("/opt/addons-src"), "18.0", previous_index=prev
+    repos_dir=Path("/opt/addons-src"), version="18.0", previous_index=prev
 )
 write_json(state_file, full_index)  # incremental state is caller-owned
 
