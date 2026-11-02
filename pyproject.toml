@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "odoo-module-scan"
+version = "0.1.0"
+description = "Scan Odoo addon repositories into JSON artifacts"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = [
+    "docutils",
+    "lizard>=1.17.0",
+    "pyyaml>=6.0",
+    "radon>=5.0.0",
+    "requests>=2.0.0",
+    "rst2gfm",
+]
+
+[project.optional-dependencies]
+dev = ["black", "flake8", "mypy", "pytest", "ruff"]
+
+[project.scripts]
+odoo-module-scan = "odoo_module_scan.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["odoo_module_scan*"]
