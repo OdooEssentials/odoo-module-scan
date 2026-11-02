@@ -13,6 +13,7 @@ Directory arguments accept ``str | Path`` and default to the
 """
 
 import json
+from collections.abc import Sequence
 from pathlib import Path
 
 from . import git_fetcher, pr_index
@@ -30,12 +31,12 @@ from .module_facts import extract_repo
 from .repos import load_repo_specs
 
 
-def resolve_branches(branches: list[str] | None, ascending: bool) -> list[str | None]:
+def resolve_branches(branches: Sequence[str] | None, ascending: bool) -> list[str | None]:
     """Expand ``"all"`` in a branch list, or return ``[None]`` for none given."""
     if branches is None:
         return [None]
     source = SUPPORTED_OCA_VERSIONS if "all" in branches else branches
-    return sorted(source, reverse=not ascending)
+    return list[str | None](sorted(source, reverse=not ascending))
 
 
 def sync(
@@ -58,9 +59,7 @@ def sync(
     """
     state_dir = Path(state_dir) if state_dir else default_state_dir()
     if print_repos:
-        extra = (
-            Path(extra_repos) if extra_repos and Path(extra_repos).is_file() else None
-        )
+        extra = Path(extra_repos) if extra_repos and Path(extra_repos).is_file() else None
         if repos:
             specs = [_repo_url(_normalize_repo_spec(s)) for s in repos]
         else:
@@ -168,10 +167,10 @@ def pr_scan(
     output_dir = Path(output_dir) if output_dir else state_dir / "output"
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    if prs is None:
+        raise ValueError("prs is required")
     prs_by_repo: dict[str, list[JsonDict]] = (
-        prs
-        if isinstance(prs, dict)
-        else json.loads(Path(prs).read_text(encoding="utf-8"))
+        prs if isinstance(prs, dict) else json.loads(Path(prs).read_text(encoding="utf-8"))
     )
     index_file = output_dir / f"pr-index-{branch}.json"
     branch_index = load_json(index_file, default={"metadata": {}, "modules": {}})
@@ -188,9 +187,7 @@ def pr_scan(
         branch_prs = [pr for pr in repo_prs if pr["base_ref"] == branch]
         if not branch_prs:
             continue
-        to_scan = pr_index.select_prs_to_scan(
-            branch_index, local_name, branch_prs, force
-        )
+        to_scan = pr_index.select_prs_to_scan(branch_index, local_name, branch_prs, force)
         if to_scan:
             ok = git_fetcher.prepare_refs(
                 repos_dir / local_name,
@@ -240,9 +237,7 @@ def facts(
     repo = Path(repo)
     if not repo.is_dir():
         raise FileNotFoundError(f"repo checkout not found: {repo}")
-    out_dir = (
-        Path(output) if output else default_output_dir() / "facts" / repo.resolve().name
-    )
+    out_dir = Path(output) if output else default_output_dir() / "facts" / repo.resolve().name
     if sections == "all" or (isinstance(sections, list) and "all" in sections):
         sections = "all"
     index = extract_repo(repo, out_dir, sections=sections)

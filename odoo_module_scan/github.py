@@ -8,9 +8,8 @@ from pathlib import Path
 
 import requests
 
+from ._util import JsonDict, default_state_dir
 from .constants import NOT_ADDONS
-from ._util import JsonDict
-from ._util import default_state_dir
 
 
 def github_api_get(url: str, timeout: int = 60) -> requests.Response:
@@ -22,9 +21,7 @@ def github_api_get(url: str, timeout: int = 60) -> requests.Response:
     return requests.get(url, headers=headers, timeout=timeout)
 
 
-def github_api_paginate(
-    url: str, per_page: int = 100, timeout: int = 60
-) -> Iterator[JsonDict]:
+def github_api_paginate(url: str, per_page: int = 100, timeout: int = 60) -> Iterator[JsonDict]:
     """Yield items from a paginated GitHub API GET endpoint."""
     page = 1
     while True:

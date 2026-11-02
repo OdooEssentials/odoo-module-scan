@@ -13,8 +13,8 @@ import json
 import sys
 from pathlib import Path
 
-from ._util import default_state_dir
 from . import api
+from ._util import default_state_dir
 from .module_facts import DETAIL_SECTIONS
 
 
@@ -25,11 +25,7 @@ def _emit_stdout(data) -> None:
 
 def _redirect_to_stderr(stdout_mode: bool):
     """In --stdout mode every diagnostic goes to stderr."""
-    return (
-        contextlib.redirect_stdout(sys.stderr)
-        if stdout_mode
-        else contextlib.nullcontext()
-    )
+    return contextlib.redirect_stdout(sys.stderr) if stdout_mode else contextlib.nullcontext()
 
 
 def _cmd_sync(args: argparse.Namespace) -> int:
@@ -75,9 +71,7 @@ def _cmd_scan(args: argparse.Namespace) -> int:
             f" ={meta['unchanged_count']} -{meta['deleted_count']}"
         )
     if args.stdout:
-        _emit_stdout(
-            next(iter(changes.values())) if len(changes) == 1 else {"changes": changes}
-        )
+        _emit_stdout(next(iter(changes.values())) if len(changes) == 1 else {"changes": changes})
 
     if args.only_changed:
         return (
@@ -111,9 +105,7 @@ def _cmd_pr_scan(args: argparse.Namespace) -> int:
 
 def _cmd_facts(args: argparse.Namespace) -> int:
     try:
-        index = api.facts(
-            args.repo, output=args.output, sections=args.sections, yaml_out=args.yaml
-        )
+        index = api.facts(args.repo, output=args.output, sections=args.sections, yaml_out=args.yaml)
     except FileNotFoundError as exc:
         print(f"✗ {exc}", file=sys.stderr)
         return 1
@@ -249,9 +241,7 @@ def main(argv: list[str] | None = None) -> int:
     # facts -----------------------------------------------------------------
     p = sub.add_parser("facts", help="deterministic per-addon fact extraction")
     p.add_argument("repo", type=Path, help="addon repo checkout to scan")
-    p.add_argument(
-        "--output", type=Path, help="output dir (default: <output>/facts/<repo>)"
-    )
+    p.add_argument("--output", type=Path, help="output dir (default: <output>/facts/<repo>)")
     p.add_argument(
         "--sections",
         nargs="+",
