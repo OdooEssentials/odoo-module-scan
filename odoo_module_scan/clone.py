@@ -38,7 +38,9 @@ def _repo_url(spec: str) -> tuple[str, str]:
     return repo_local_name(owner, repo), git_url(spec)
 
 
-def sync_repo(repos_dir: Path, spec: str, branch: str | None, verbose: bool) -> tuple[bool, bool]:
+def sync_repo(
+    repos_dir: Path, spec: str, branch: str | None, verbose: bool
+) -> tuple[bool, bool]:
     """Clone or update a single repo. Returns (success, changed)."""
     name, url = _repo_url(spec)
     repo_path = repos_dir / name
@@ -70,7 +72,11 @@ def sync_repo(repos_dir: Path, spec: str, branch: str | None, verbose: bool) -> 
                 print(f"    ⚠ pull failed for {name} branch {branch}")
                 pull_failed = True
         after = git_output("rev-parse", "HEAD", cwd=repo_path)
-        if not after or len(after) != 40 or not all(c in "0123456789abcdef" for c in after.lower()):
+        if (
+            not after
+            or len(after) != 40
+            or not all(c in "0123456789abcdef" for c in after.lower())
+        ):
             print("    ⚠ cannot determine new HEAD, skipping change detection")
             return True, False
         changed = before != after
@@ -81,7 +87,9 @@ def sync_repo(repos_dir: Path, spec: str, branch: str | None, verbose: bool) -> 
                 remote_ref = f"origin/{branch}"
             else:
                 # Use current branch's remote tracking branch
-                current_branch = git_output("rev-parse", "--abbrev-ref", "HEAD", cwd=repo_path)
+                current_branch = git_output(
+                    "rev-parse", "--abbrev-ref", "HEAD", cwd=repo_path
+                )
                 if current_branch == "HEAD" or not current_branch:
                     print(
                         "    ⚠ repo in detached HEAD state or no branch,"
@@ -122,7 +130,9 @@ def sync_repo(repos_dir: Path, spec: str, branch: str | None, verbose: bool) -> 
         return True, True
 
 
-def clone_or_update_repo(repos_dir: Path, name: str, url: str, verbose: bool) -> tuple[bool, bool]:
+def clone_or_update_repo(
+    repos_dir: Path, name: str, url: str, verbose: bool
+) -> tuple[bool, bool]:
     """Clone repo (shallow) if missing, or fetch/update if exists. Returns (success, changed)."""
     repo_path = repos_dir / name
 
@@ -133,7 +143,15 @@ def clone_or_update_repo(repos_dir: Path, name: str, url: str, verbose: bool) ->
         return True, False
     else:
         # Clone new - shallow clone with all branch tips for disk savings + branch switching
-        cmd = ["clone", "--quiet", "--depth", "1", "--no-single-branch", url, str(repo_path)]
+        cmd = [
+            "clone",
+            "--quiet",
+            "--depth",
+            "1",
+            "--no-single-branch",
+            url,
+            str(repo_path),
+        ]
         if run_git(*cmd) != 0:
             # Error will be reported by caller
             return False, False
@@ -154,7 +172,9 @@ def _checkout_branch(repo_path: Path, branch: str) -> int:
     return run_git("checkout", "-B", branch, f"origin/{branch}", cwd=repo_path)
 
 
-def checkout_and_pull_branch(repo_path: Path, branch: str, verbose: bool) -> tuple[bool, bool, str]:
+def checkout_and_pull_branch(
+    repo_path: Path, branch: str, verbose: bool
+) -> tuple[bool, bool, str]:
     """Checkout branch and update. Returns (success, changed, status_message).
 
     Handles normal updates, amended commits, and force-pushes by comparing
@@ -223,7 +243,11 @@ def sync_for_branches(
         all_specs = [_repo_url(_normalize_repo_spec(s)) for s in specific_repos]
         print(f"Repos: {len(all_specs)} specified")
     else:
-        extra_file = extra_repos_file if extra_repos_file and extra_repos_file.is_file() else None
+        extra_file = (
+            extra_repos_file
+            if extra_repos_file and extra_repos_file.is_file()
+            else None
+        )
         all_specs = load_repo_specs(
             extra_file=extra_file,
             not_addons=NOT_ADDONS,
@@ -261,7 +285,11 @@ def sync_for_branches(
     if remove_stale and len(branches) <= 1:
         expected = {name for name, _ in all_specs}
         for entry in repos_dir.iterdir():
-            if entry.is_dir() and (entry / ".git").is_dir() and entry.name not in expected:
+            if (
+                entry.is_dir()
+                and (entry / ".git").is_dir()
+                and entry.name not in expected
+            ):
                 print(f"  Removing stale: {entry.name}")
                 shutil.rmtree(entry)
 
@@ -282,7 +310,9 @@ def sync_for_branches(
             if not (repo_path.is_dir() and (repo_path / ".git").is_dir()):
                 continue  # Skip if clone failed
 
-            success, changed, status = checkout_and_pull_branch(repo_path, branch, verbose)
+            success, changed, status = checkout_and_pull_branch(
+                repo_path, branch, verbose
+            )
 
             if "not found" in status:
                 missing_branch_repos.append((name, status))

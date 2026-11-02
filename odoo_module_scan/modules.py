@@ -92,7 +92,15 @@ def read_readme(module_dir: Path) -> str:
     return ""
 
 
-_CODE_SKIP_DIRS = {"tests", "test", "i18n", "static", "demo", "migrations", "__pycache__"}
+_CODE_SKIP_DIRS = {
+    "tests",
+    "test",
+    "i18n",
+    "static",
+    "demo",
+    "migrations",
+    "__pycache__",
+}
 _CODE_SKIP_FILES = {"__init__.py", "__manifest__.py", "__openerp__.py"}
 
 
@@ -203,7 +211,9 @@ def compute_code_metrics(module_dir: Path) -> JsonDict:
 
         if ext == "py":
             py_functions += len(file_result.function_list)
-            py_complexity += sum(fn.cyclomatic_complexity for fn in file_result.function_list)
+            py_complexity += sum(
+                fn.cyclomatic_complexity for fn in file_result.function_list
+            )
             py_source_parts.append(source)
 
     # Maintainability Index: computed over all .py source concatenated
@@ -213,14 +223,23 @@ def compute_code_metrics(module_dir: Path) -> JsonDict:
     if py_source_parts:
         combined = "\n".join(py_source_parts)
         try:
-            volume, cc, sloc, comments_pct = radon_metrics.mi_parameters(combined, count_multi=True)
+            volume, cc, sloc, comments_pct = radon_metrics.mi_parameters(
+                combined, count_multi=True
+            )
             py_mi = round(radon_metrics.mi_compute(volume, cc, sloc, comments_pct), 1)
             py_mi_rank = radon_metrics.mi_rank(py_mi)
             assert py_mi is not None and py_mi_rank is not None
             py_mi_explanation = _build_mi_explanation(
                 volume, cc, sloc, comments_pct, py_mi, py_mi_rank
             )
-        except (SyntaxError, ValueError, TypeError, OSError, AttributeError, ZeroDivisionError):
+        except (
+            SyntaxError,
+            ValueError,
+            TypeError,
+            OSError,
+            AttributeError,
+            ZeroDivisionError,
+        ):
             # radon MI scoring is best-effort; failures leave the metric unset.
             # SyntaxError: module source may use grammar newer than the runner's
             # interpreter (e.g. PEP 701 nested-quote f-strings need Python 3.12+).

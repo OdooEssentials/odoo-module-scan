@@ -11,7 +11,7 @@ from collections.abc import Callable, Iterator
 from datetime import datetime, timezone
 from pathlib import Path
 
-from ._util import JsonDict
+from ._util import JsonDict, default_repos_dir
 from .branch import checkout_branch, get_current_branch, iter_repos
 from .git import git_output
 from .modules import (
@@ -48,7 +48,9 @@ def iter_modules(
         for item in iter_module_dir_candidates(repo, verbose):
             if item.name in seen_names:
                 if verbose:
-                    print(f"    ⚠ duplicate {item.name}, skipping {item.relative_to(repo)}")
+                    print(
+                        f"    ⚠ duplicate {item.name}, skipping {item.relative_to(repo)}"
+                    )
                 continue
 
             # Best-effort per-module last-change SHA. On shallow clones this
@@ -125,7 +127,8 @@ def enrich_modules(modules: JsonDict) -> None:
 
 
 def build_index(
-    repos_dir: Path,
+    repos_dir: Path | None = None,
+    *,
     version: str,
     specific_repos: list[str] | None = None,
     verbose: bool = False,
@@ -168,6 +171,7 @@ def build_index(
 
     current_names = set()
 
+    repos_dir = Path(repos_dir) if repos_dir else default_repos_dir()
     for module in iter_modules(
         repos_dir, version, specific_repos, verbose, previous_index, compute_metrics
     ):

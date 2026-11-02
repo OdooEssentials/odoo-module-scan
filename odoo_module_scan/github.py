@@ -22,7 +22,9 @@ def github_api_get(url: str, timeout: int = 60) -> requests.Response:
     return requests.get(url, headers=headers, timeout=timeout)
 
 
-def github_api_paginate(url: str, per_page: int = 100, timeout: int = 60) -> Iterator[JsonDict]:
+def github_api_paginate(
+    url: str, per_page: int = 100, timeout: int = 60
+) -> Iterator[JsonDict]:
     """Yield items from a paginated GitHub API GET endpoint."""
     page = 1
     while True:

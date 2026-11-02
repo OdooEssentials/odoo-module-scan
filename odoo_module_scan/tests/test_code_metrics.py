@@ -42,7 +42,9 @@ class TestEmpty:
         """__manifest__.py is in _CODE_SKIP_FILES and must not be counted."""
         module_dir = make_module(
             tmp_path,
-            {"__manifest__.py": "{'name': 'Test', 'version': '1.0', 'depends': ['base']}"},
+            {
+                "__manifest__.py": "{'name': 'Test', 'version': '1.0', 'depends': ['base']}"
+            },
         )
         m = compute_code_metrics(module_dir)
         assert m["lines_py"] == 0

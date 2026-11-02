@@ -6,4 +6,6 @@ index/changes/manifest JSON for a downstream pipeline step. No
 database, no Cloudflare — local files only.
 """
 
+from .api import facts, pr_scan, scan, sync  # noqa: F401
+
 __version__ = "0.1.0"

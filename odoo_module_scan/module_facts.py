@@ -47,18 +47,27 @@ FEATURE_MODELS = {
 }
 
 
-def extract_repo(repo_path: str | Path, out_dir: str | Path, sections=None) -> dict[str, Any]:
+def extract_repo(
+    repo_path: str | Path, out_dir: str | Path, sections=None
+) -> dict[str, Any]:
     """Extract every addon in a repository and write per-addon facts plus an index."""
     repo = Path(repo_path)
     output = Path(out_dir)
     output.mkdir(parents=True, exist_ok=True)
     addons = sorted(p.name for p in repo.iterdir() if (p / "__manifest__.py").is_file())
-    index: dict[str, Any] = {"repo": str(repo), "git": git_info(repo), "addons": {}, "failures": []}
+    index: dict[str, Any] = {
+        "repo": str(repo),
+        "git": git_info(repo),
+        "addons": {},
+        "failures": [],
+    }
     for addon in addons:
         try:
             facts = extract_addon(repo, addon, sections)
         except Exception as exc:  # noqa: BLE001
-            index["failures"].append({"addon": addon, "error": f"{type(exc).__name__}: {exc}"})
+            index["failures"].append(
+                {"addon": addon, "error": f"{type(exc).__name__}: {exc}"}
+            )
             continue
         _write_json(output / f"{addon}.json", facts)
         index["addons"][addon] = index_entry(facts)
@@ -77,7 +86,11 @@ def extract_addon(repo_path: str | Path, addon: str, sections=None) -> dict[str,
     ir.model.access.csv rows) and ``tests`` (per-file test detail).
     ``"all"`` enables every detail section.
     """
-    detail = set() if sections is None else set(DETAIL_SECTIONS if sections == "all" else sections)
+    detail = (
+        set()
+        if sections is None
+        else set(DETAIL_SECTIONS if sections == "all" else sections)
+    )
     repo = Path(repo_path)
     root = (repo / addon).resolve()
     if root.parent != repo.resolve() or not (root / "__manifest__.py").is_file():
@@ -109,10 +122,14 @@ def extract_addon(repo_path: str | Path, addon: str, sections=None) -> dict[str,
         "xml_files": len(xml_files),
         "xml_records": len(xml_records),
         "fields_defined": sum(
-            len(cls["fields"]) for item in python_files for cls in item.get("classes", [])
+            len(cls["fields"])
+            for item in python_files
+            for cls in item.get("classes", [])
         ),
         "methods_defined": sum(
-            len(cls["methods"]) for item in python_files for cls in item.get("classes", [])
+            len(cls["methods"])
+            for item in python_files
+            for cls in item.get("classes", [])
         ),
         "test_files": len(tests["files"]),
         "test_methods": tests["test_methods"],
@@ -123,7 +140,11 @@ def extract_addon(repo_path: str | Path, addon: str, sections=None) -> dict[str,
         {
             **item,
             "classes": [
-                {k: v for k, v in cls.items() if k in detail or k not in ("fields", "methods")}
+                {
+                    k: v
+                    for k, v in cls.items()
+                    if k in detail or k not in ("fields", "methods")
+                }
                 for cls in item.get("classes", [])
             ],
         }
@@ -206,7 +227,10 @@ def parse_manifest(path: Path) -> dict[str, Any]:
 
 def scan_readme(root: Path) -> dict[str, Any]:
     """Inventory README fragments without copying their complete content."""
-    result: dict[str, Any] = {"files": [], "readme_rst": (root / "README.rst").is_file()}
+    result: dict[str, Any] = {
+        "files": [],
+        "readme_rst": (root / "README.rst").is_file(),
+    }
     readme_dir = root / "readme"
     if not readme_dir.is_dir():
         return result
@@ -224,11 +248,15 @@ def scan_readme(root: Path) -> dict[str, Any]:
             )
         except (OSError, UnicodeDecodeError):
             lead = None
-        result["files"].append({"file": path.relative_to(root).as_posix(), "lead": lead})
+        result["files"].append(
+            {"file": path.relative_to(root).as_posix(), "lead": lead}
+        )
     return result
 
 
-def scan_python(path: Path, rel: str, derived: dict[str, set[str]]) -> dict[str, Any] | None:
+def scan_python(
+    path: Path, rel: str, derived: dict[str, set[str]]
+) -> dict[str, Any] | None:
     """Inventory classes, Odoo fields, methods, decorators, and imports in a Python file."""
     try:
         tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -239,7 +267,12 @@ def scan_python(path: Path, rel: str, derived: dict[str, set[str]]) -> dict[str,
     for node in tree.body:
         if isinstance(node, ast.ClassDef):
             bases = [_dotted_name(base) for base in node.bases]
-            cls: dict[str, Any] = {"name": node.name, "bases": bases, "fields": [], "methods": []}
+            cls: dict[str, Any] = {
+                "name": node.name,
+                "bases": bases,
+                "fields": [],
+                "methods": [],
+            }
             for statement in node.body:
                 if isinstance(statement, (ast.Assign, ast.AnnAssign)):
                     targets = (
@@ -252,10 +285,13 @@ def scan_python(path: Path, rel: str, derived: dict[str, set[str]]) -> dict[str,
                             _handle_class_attr(cls, statement, target.id)
                 elif isinstance(statement, (ast.FunctionDef, ast.AsyncFunctionDef)):
                     decorators = [
-                        name for item in statement.decorator_list if (name := _decorator_name(item))
+                        name
+                        for item in statement.decorator_list
+                        if (name := _decorator_name(item))
                     ]
                     cls["methods"].append(
-                        statement.name + (f" (@{','.join(decorators)})" if decorators else "")
+                        statement.name
+                        + (f" (@{','.join(decorators)})" if decorators else "")
                     )
             name, inherit = cls.get("_name"), cls.get("_inherit")
             if isinstance(name, str):
@@ -268,7 +304,9 @@ def scan_python(path: Path, rel: str, derived: dict[str, set[str]]) -> dict[str,
             if isinstance(inherit, str):
                 derived["inherits"].add(inherit)
             elif isinstance(inherit, list):
-                derived["inherits"].update(item for item in inherit if isinstance(item, str))
+                derived["inherits"].update(
+                    item for item in inherit if isinstance(item, str)
+                )
             if name or inherit or cls["fields"] or cls["methods"]:
                 classes.append(cls)
         elif isinstance(node, ast.Import):
@@ -296,7 +334,9 @@ def scan_xml(path: Path, rel: str, records: list[dict[str, Any]]) -> dict[str, A
         root = ET.parse(path).getroot()  # nosec B314
     except ET.ParseError:
         return {"file": rel, "error": "XML parse error"}
-    entry["noupdate"] = any(data.get("noupdate") in ("1", "true") for data in root.iter("data"))
+    entry["noupdate"] = any(
+        data.get("noupdate") in ("1", "true") for data in root.iter("data")
+    )
     for record in root.iter("record"):
         model = record.get("model")
         if model:
@@ -306,7 +346,9 @@ def scan_xml(path: Path, rel: str, records: list[dict[str, Any]]) -> dict[str, A
     for template in root.iter("template"):
         entry["templates"] += 1
         if template.get("id"):
-            records.append({"file": rel, "id": template.get("id"), "model": "ir.ui.view(template)"})
+            records.append(
+                {"file": rel, "id": template.get("id"), "model": "ir.ui.view(template)"}
+            )
     entry["menuitems"] = sum(1 for _ in root.iter("menuitem"))
     entry["models"] = sorted(entry["models"])
     return entry
@@ -324,7 +366,9 @@ def scan_security(root: Path) -> dict[str, Any]:
         result["files"].append(path.relative_to(root).as_posix())
         if path.name == "ir.model.access.csv":
             try:
-                for row in csv.DictReader(io.StringIO(path.read_text(encoding="utf-8"))):
+                for row in csv.DictReader(
+                    io.StringIO(path.read_text(encoding="utf-8"))
+                ):
                     if row.get("model_id:id"):
                         result["access_rules"].append(
                             {
@@ -341,7 +385,11 @@ def scan_security(root: Path) -> dict[str, Any]:
 def scan_i18n(root: Path) -> list[str]:
     """Return available translation language names."""
     directory = root / "i18n"
-    return sorted(path.stem for path in directory.glob("*.po")) if directory.is_dir() else []
+    return (
+        sorted(path.stem for path in directory.glob("*.po"))
+        if directory.is_dir()
+        else []
+    )
 
 
 def scan_tests(root: Path) -> dict[str, Any]:
@@ -387,7 +435,9 @@ def derive_features(
 ) -> set[str]:
     """Derive cross-file technical feature flags."""
     features = {
-        FEATURE_MODELS[item["model"]] for item in xml_records if item["model"] in FEATURE_MODELS
+        FEATURE_MODELS[item["model"]]
+        for item in xml_records
+        if item["model"] in FEATURE_MODELS
     }
     if security["access_rules"]:
         features.add("access_rules")
@@ -429,7 +479,11 @@ def _handle_class_attr(
 
 
 def _decorator_name(node: ast.expr) -> str | None:
-    return _decorator_name(node.func) if isinstance(node, ast.Call) else _dotted_name(node) or None
+    return (
+        _decorator_name(node.func)
+        if isinstance(node, ast.Call)
+        else _dotted_name(node) or None
+    )
 
 
 def _dotted_name(node: ast.expr) -> str:
@@ -442,4 +496,6 @@ def _dotted_name(node: ast.expr) -> str:
 
 
 def _write_json(path: Path, value: Any) -> None:
-    path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(value, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )

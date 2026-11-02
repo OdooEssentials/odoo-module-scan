@@ -34,6 +34,8 @@ def _imported_modules(path: Path) -> list[str]:
 def test_no_ingest_imports(path: Path):
     """No package file imports ingest-private modules."""
     offenders = [
-        name for name in _imported_modules(path) if name.split(".")[0] in FORBIDDEN_PREFIXES
+        name
+        for name in _imported_modules(path)
+        if name.split(".")[0] in FORBIDDEN_PREFIXES
     ]
     assert not offenders, f"{path} imports ingest modules: {offenders}"
