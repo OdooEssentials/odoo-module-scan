@@ -54,9 +54,6 @@ odoo-module-scan scan --branch 18.0
 # 3. look at what you got (defaults: ~/.cache/odoo-module-scan/output)
 jq '.metadata' ~/.cache/odoo-module-scan/output/changes-18.0.json
 jq -r '.modules | keys[]' ~/.cache/odoo-module-scan/output/index-18.0.json | head
-
-# 4. or stream the diff straight into the next step
-odoo-module-scan scan --branch 18.0 --stdout | ./your-ingest
 ```
 
 Where things land:
@@ -246,29 +243,18 @@ one function per subcommand, with the same arguments:
 The Quickstart, in Python:
 
 ```python
-from odoo_module_scan import index, sync
-from odoo_module_scan._util import (
-    default_output_dir, default_repos_dir, load_json, write_json,
-)
+from odoo_module_scan import scan, sync
 
-repos_dir = default_repos_dir()           # ~/.cache/odoo-module-scan/repos
-out_dir = default_output_dir()            # ~/.cache/odoo-module-scan/output
+# 1. same as `sync --branch 18.0 --repos ...` — default dirs
+sync(branches=["18.0"], repos=["OCA/sale-workflow", "OCA/stock-logistics-workflow"])
 
-# 1. same as `sync --branch 18.0 --repos ...`
-sync.sync_for_branches(
-    repos_dir,
-    branches=["18.0"],
-    specific_repos=["OCA/sale-workflow", "OCA/stock-logistics-workflow"],
-)
+# 2. same as `scan --branch 18.0` — writes the artifacts and
+#    returns them: {"indexes": {branch: index}, "changes": {...}}
+result = scan(branches=["18.0"])
 
-# 2. same as `scan` — incremental via the previous index file
-index_file = out_dir / "index-18.0.json"
-prev = load_json(index_file) if index_file.is_file() else None
-full_index, changes = index.build_index(repos_dir, "18.0", previous_index=prev)
-
-# 3. artifacts are just dicts — write them, or consume them directly
-write_json(index_file, full_index)
-write_json(out_dir / "changes-18.0.json", changes)
+# 3. consume the dicts directly — no file juggling needed
+changes = result["changes"]["18.0"]
+index_18 = result["indexes"]["18.0"]
 ```
 
 The rest of the surface, by module:
@@ -284,7 +270,7 @@ The rest of the surface, by module:
 | `odoo_module_scan.repos` | `load_repo_list`, `load_repo_specs`, `repo_local_name` — repo-list resolution |
 | `odoo_module_scan.github` | `fetch_oca_repos`, `github_api_*` — OCA repo discovery |
 | `odoo_module_scan.git`, `.branch` | `run_git`, `git_output`, `checkout_branch`, `iter_repos` — git plumbing |
-| `odoo_module_scan._util` | `load_json`, `write_json`, `make_doc_id`, `default_*_dir` — shared helpers |
+| `odoo_module_scan._util` | internal — `load_json`, `write_json`, `make_doc_id`, `default_*_dir`; not public contract |
 
 ## Example pipeline
 
