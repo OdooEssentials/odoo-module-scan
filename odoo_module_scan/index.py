@@ -48,9 +48,7 @@ def iter_modules(
         for item in iter_module_dir_candidates(repo, verbose):
             if item.name in seen_names:
                 if verbose:
-                    print(
-                        f"    ⚠ duplicate {item.name}, skipping {item.relative_to(repo)}"
-                    )
+                    print(f"    ⚠ duplicate {item.name}, skipping {item.relative_to(repo)}")
                 continue
 
             # Best-effort per-module last-change SHA. On shallow clones this

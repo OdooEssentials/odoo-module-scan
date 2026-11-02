@@ -26,3 +26,6 @@ odoo-module-scan = "odoo_module_scan.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["odoo_module_scan*"]
+
+[tool.black]
+line-length = 100

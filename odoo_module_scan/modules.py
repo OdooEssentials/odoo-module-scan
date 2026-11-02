@@ -211,9 +211,7 @@ def compute_code_metrics(module_dir: Path) -> JsonDict:
 
         if ext == "py":
             py_functions += len(file_result.function_list)
-            py_complexity += sum(
-                fn.cyclomatic_complexity for fn in file_result.function_list
-            )
+            py_complexity += sum(fn.cyclomatic_complexity for fn in file_result.function_list)
             py_source_parts.append(source)
 
     # Maintainability Index: computed over all .py source concatenated
@@ -223,9 +221,7 @@ def compute_code_metrics(module_dir: Path) -> JsonDict:
     if py_source_parts:
         combined = "\n".join(py_source_parts)
         try:
-            volume, cc, sloc, comments_pct = radon_metrics.mi_parameters(
-                combined, count_multi=True
-            )
+            volume, cc, sloc, comments_pct = radon_metrics.mi_parameters(combined, count_multi=True)
             py_mi = round(radon_metrics.mi_compute(volume, cc, sloc, comments_pct), 1)
             py_mi_rank = radon_metrics.mi_rank(py_mi)
             assert py_mi is not None and py_mi_rank is not None
