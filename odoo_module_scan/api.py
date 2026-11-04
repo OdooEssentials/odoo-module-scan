@@ -16,6 +16,7 @@ import json
 from collections.abc import Sequence
 from pathlib import Path
 
+from . import alphabot as _alphabot
 from . import git_fetcher, pr_index
 from ._util import (
     JsonDict,
@@ -266,3 +267,44 @@ def _repo_spec(local_name: str) -> str:
     """Derive the ``owner/repo`` spec from a repo local dir name."""
     owner, sep, name = local_name.partition("__")
     return f"{owner}/{name}" if sep else f"OCA/{local_name}"
+
+
+def alphabot(
+    repos_dir: str | Path | None = None,
+    branch: str | None = None,
+    repos: list[str] | None = None,
+    fork_owner: str = "dreispt",
+    dry_run: bool = False,
+    state_dir: str | Path | None = None,
+    verbose: bool = False,
+) -> JsonDict:
+    """Maintain ``<branch>-preview`` branches on per-repo forks — ``alphabot``.
+
+    For each repo in ``repos_dir`` (or ``repos`` filter): list open PRs on
+    ``branch``, merge them onto ``<branch>-preview``, push to the
+    ``<fork_owner>/<repo>`` fork remote and upsert the draft PR. Returns
+    ``{"repos": {local_name: result}}`` and writes
+    ``alphabot-<branch>.json`` state under the output dir.
+    """
+    state_dir = Path(state_dir) if state_dir else default_state_dir()
+    repos_dir = Path(repos_dir) if repos_dir else state_dir / "repos"
+    output_dir = state_dir / "output"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    results: JsonDict = {"repos": {}}
+    from .api import _repo_spec  # local name -> owner/repo
+
+    for repo in sorted(repos_dir.iterdir()):
+        if not repo.is_dir() or repo.name.startswith("."):
+            continue
+        if repos and repo.name not in repos and _repo_spec(repo.name) not in repos:
+            continue
+        spec = _repo_spec(repo.name)
+        try:
+            results["repos"][repo.name] = _alphabot.alphabot_repo(
+                repo, spec, branch, fork_owner, dry_run=dry_run, verbose=verbose
+            )
+        except Exception as exc:  # noqa: BLE001
+            results["repos"][repo.name] = {"status": "failed", "error": str(exc)}
+    write_json(output_dir / f"alphabot-{branch}.json", results)
+    return results

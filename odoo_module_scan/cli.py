@@ -103,6 +103,24 @@ def _cmd_pr_scan(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_alphabot(args: argparse.Namespace) -> int:
+    result = api.alphabot(
+        repos_dir=args.repos_dir,
+        branch=args.branch,
+        repos=args.repos,
+        fork_owner=args.fork_owner,
+        dry_run=args.dry_run,
+        state_dir=args.state_dir,
+        verbose=args.verbose,
+    )
+    for name, r in result["repos"].items():
+        print(
+            f"  {name}: {r['status']} (+{len(r.get('merged', []))}"
+            f" !{len(r.get('conflicts', []))})"
+        )
+    return 0
+
+
 def _cmd_facts(args: argparse.Namespace) -> int:
     try:
         index = api.facts(args.repo, output=args.output, sections=args.sections, yaml_out=args.yaml)
@@ -237,6 +255,21 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--force", action="store_true", help="rescan every listed PR")
     p.add_argument("-v", "--verbose", action="store_true")
     p.set_defaults(func=_cmd_pr_scan)
+
+    # alphabot --------------------------------------------------------------
+    p = sub.add_parser(
+        "alphabot", help="experimental: build <branch>-preview with all open PRs merged"
+    )
+    p.add_argument(
+        "--repos-dir", type=Path, default=None, help="repo checkouts (default: <state-dir>/repos)"
+    )
+    p.add_argument("--branch", required=True, help="base branch of the preview")
+    p.add_argument("--repos", nargs="+", help="specific repos (default: all)")
+    p.add_argument("--fork-owner", default="dreispt", help="fork namespace for preview branches")
+    p.add_argument("--dry-run", action="store_true", help="merge locally, don't push/open PRs")
+    p.add_argument("--state-dir", type=Path, default=default_state_dir())
+    p.add_argument("-v", "--verbose", action="store_true")
+    p.set_defaults(func=_cmd_alphabot)
 
     # facts -----------------------------------------------------------------
     p = sub.add_parser("facts", help="deterministic per-addon fact extraction")

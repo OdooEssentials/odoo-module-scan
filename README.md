@@ -127,7 +127,7 @@ only new work costs time. Output: `index-<branch>.json` (the full
 record set) and `changes-<branch>.json` (the diff for your next
 step). `--only-changed` exits 0 or 1 so CI can gate on it.
 
-_Experimental — may change without notice:_ `--metrics` (radon/lizard
+_Experimental — may change without notice:_ `alphabot` (fork preview branches + draft PRs); `--metrics` (radon/lizard
 code metrics) — the `py_*`/`lines_*` fields it emits are not part of
 the stable record contract.
 
